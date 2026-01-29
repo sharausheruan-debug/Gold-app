@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ئەپی کاتەکانی بانگ</title>
+    
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogImthdGVrYW5pIEJhbmciLAogICJzaG9ydF9uYW1lIjogIkJhbmciLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzFhMmEzZSIsCiAgInRoZW1lX2NvbG9yIjogIiMxYTJhM2UiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yODczLzI4NzMwMzEucG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9CiAgXQp9">
+    <meta name="theme-color" content="#1a2a3e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --bg: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .city-picker {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            margin: 20px 0;
+            background: #fff;
+            outline: none;
+        }
+
+        .prayer-card {
+            background: #f9f9f9;
+            border-radius: 20px;
+            padding: 10px;
+        }
+
+        .prayer-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 10px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .prayer-row:last-child { border-bottom: none; }
+
+        .label { font-weight: 600; color: #555; }
+        .time { font-weight: bold; color: var(--accent); font-size: 1.1rem; }
+
+        .date-footer {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* لۆدینگ */
+        .loading-text { color: #e67e22; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>کاتەکانی بانگ</h1>
+        <p id="city-name" style="color: #777;">کوردستان</p>
+    </header>
+
+    <select id="citySelect" class="city-picker">
+        <option value="Erbil">هەولێر</option>
+        <option value="Sulaymaniyah">سلێمانی</option>
+        <option value="Duhok">دهۆک</option>
+        <option value="Kirkuk">کەرکوک</option>
+        <option value="Halabja">هەڵەبجە</option>
+    </select>
+
+    <div id="prayerContent" class="prayer-card">
+        <p class="loading-text">خەریکی وەرگرتنی داتایە...</p>
+    </div>
+
+    <div class="date-footer" id="dateInfo"></div>
+</div>
+
+<script>
+    const citySelect = document.getElementById('citySelect');
+    const prayerContent = document.getElementById('prayerContent');
+    const dateInfo = document.getElementById('dateInfo');
+
+    const prayerNames = {
+        Fajr: "بەیانی",
+        Sunrise: "ڕۆژهەڵات",
+        Dhuhr: "نیوەڕۆ",
+        Asr: "عەسر",
+        Maghrib: "ئێوارە",
+        Isha: "خەوتن"
+    };
+
+    async function getTimes(city) {
+        prayerContent.innerHTML = '<p class="loading-text">چاوەڕێ بکە...</p>';
+        try {
+            const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${city}&country=Iraq&method=3`);
+            const data = await res.json();
+            const timings = data.data.timings;
+
+            let html = '';
+            for (let [eng, kur] of Object.entries(prayerNames)) {
+                html += `
+                    <div class="prayer-row">
+                        <span class="label">${kur}</span>
+                        <span class="time">${timings[eng]}</span>
+                    </div>
+                `;
+            }
+            prayerContent.innerHTML = html;
+            dateInfo.innerHTML = `کۆچی: ${data.data.date.hijri.date}<br>زاینی: ${data.data.date.readable}`;
+        } catch (err) {
+            prayerContent.innerHTML = '<p style="color:red;">هەڵە لە پەیوەندی ئینتەرنێت!</p>';
+        }
+    }
+
+    citySelect.addEventListener('change', (e) => getTimes(e.target.value));
+    
+    // دەستپێکردن بە هەولێر
+    getTimes('Erbil');
+
+    // تێکردنی Service Worker بۆ PWA
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+            self.addEventListener('install', e => {
+                e.waitUntil(caches.open('pwa-cache').then(c => c.addAll(['./'])));
+            });
+            self.addEventListener('fetch', e => {
+                e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+            });
+        `;
+        const blob = new Blob([swCode], {type: 'text/javascript'});
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl);
+    }
+</script>
+
+</body>
+</html>
