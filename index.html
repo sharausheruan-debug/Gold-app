@@ -3,97 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>بۆرسەی زێڕ | وەشانی کۆتایی</title>
+    <title>بۆرسەی زێڕ | Pro</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d0d; --card: #1a1a1a; --input-bg: #000; --text: #fff; --up: #00ff88; --down: #ff4d4d; --freeze: #00d4ff; }
+        :root { 
+            --gold: #d4af37; --gold-light: #ffcc33; --bg: #0d0d0d; 
+            --card: #1a1a1a; --input-bg: #000; --text: #fff; 
+            --up: #00ff88; --down: #ff4d4d; --freeze: #00d4ff; 
+        }
         .light-mode { --bg: #f5f5f5; --card: #ffffff; --input-bg: #f0f0f0; --text: #333; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; min-height: 100vh; align-items: flex-start; transition: 0.3s; }
-        .box { background: var(--card); padding: 20px; border-radius: 25px; width: 100%; max-width: 380px; border: 1px solid rgba(212, 175, 55, 0.2); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5); margin-bottom: 20px; }
-        .header h2 { color: var(--gold); text-align: center; margin: 0; font-size: 22px; }
-        .live-clock { font-size: 11px; color: #666; text-align: center; margin: 5px 0; }
-        .status-bar { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
-        .btn-live { background: var(--gold); color: #000; font-weight: bold; padding: 5px 12px; border-radius: 12px; font-size: 11px; cursor: pointer; border: none; }
-        .market-btn { display: flex; align-items: center; gap: 6px; background: rgba(128,128,128,0.1); padding: 5px 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; }
-        .status-dot { width: 7px; height: 7px; border-radius: 50%; }
-        .dot-open { background: var(--up); box-shadow: 0 0 5px var(--up); }
-        .dot-closed { background: var(--down); box-shadow: 0 0 5px var(--down); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; min-height: 100vh; transition: 0.3s; overflow-x: hidden; }
+        
+        .box { 
+            background: var(--card); padding: 20px; border-radius: 25px; width: 100%; max-width: 380px; 
+            border: 1px solid rgba(212, 175, 55, 0.2); position: relative; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+        }
+
+        #menu-toggle {
+            position: absolute; right: 15px; top: 15px; background: none; border: none; 
+            color: var(--gold); font-size: 24px; cursor: pointer; z-index: 1001;
+        }
+        .sidebar {
+            position: fixed; top: 0; right: -280px; width: 250px; height: 100%;
+            background: var(--card); border-left: 1px solid var(--gold);
+            transition: 0.4s; z-index: 1000; padding: 60px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+        }
+        .sidebar.active { right: 0; }
+        
+        /* --- Styles for Dropdowns --- */
+        .menu-dropdown {
+            margin-top: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        .dropdown-header-btn {
+            width: 100%; padding: 12px; background: #222; color: var(--gold);
+            border: none; cursor: pointer; font-weight: bold; text-align: center;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            outline: none;
+        }
+        .dropdown-list { display: none; padding: 5px; background: rgba(0,0,0,0.2); }
+        .dropdown-list.show { display: block; }
+        
+        .sub-btn {
+            display: block; width: 100%; padding: 10px; margin-bottom: 5px;
+            background: transparent; border: 1px solid transparent; color: white; 
+            border-radius: 8px; cursor: pointer; text-align: center; font-size: 14px;
+        }
+        .sub-btn:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--gold); }
+        .sub-btn.active-item { border-color: var(--up); color: var(--up); }
+
+        .header h2 { color: var(--gold); text-align: center; margin: 0; font-size: 24px; font-weight: 800; }
+        .live-clock { font-size: 12px; color: #666; text-align: center; margin: 5px 0 15px; }
+
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-live { background: var(--gold); color: #000; font-weight: bold; padding: 6px 14px; border-radius: 12px; font-size: 12px; cursor: pointer; border: none; transition: 0.3s; }
+        
+        .market-btn { display: flex; align-items: center; gap: 6px; background: rgba(128,128,128,0.1); padding: 6px 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-open { background: var(--up); box-shadow: 0 0 8px var(--up); }
+        .dot-closed { background: var(--down); box-shadow: 0 0 8px var(--down); }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
         .full-width { grid-column: span 2; }
-        label { display: block; font-size: 10px; color: #888; margin-bottom: 3px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #333; border-radius: 12px; background: var(--input-bg); color: var(--text); font-size: 15px; text-align: center; outline: none; box-sizing: border-box; }
-        .results { border-radius: 15px; overflow: hidden; background: rgba(128,128,128,0.05); margin-bottom: 15px; border: 1px solid #333; position: relative; }
-        .row { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #333; }
-        .val-iqd { font-weight: bold; font-size: 16px; }
-        .val-usd { color: var(--gold); font-size: 11px; display: block; text-align: left; }
-        .calc-section { background: rgba(212, 175, 55, 0.03); padding: 15px; border-radius: 15px; border: 1px dashed rgba(212, 175, 55, 0.3); }
-        .weight-info { font-size: 10px; color: var(--gold); text-align: center; margin-top: 5px; display: block; }
-        .total-box { text-align: center; margin-top: 10px; background: #000; padding: 12px; border-radius: 12px; border: 1px solid var(--up); position: relative; }
-        .currency-toggle { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: #222; border: 1px solid #444; color: var(--text); border-radius: 8px; padding: 5px; cursor: pointer; font-size: 12px; }
-        .days-modal { display: none; position: absolute; top: 100px; left: 30px; right: 30px; background: var(--card); border: 2px solid var(--gold); padding: 15px; border-radius: 20px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; padding-right: 5px; }
+        input, select { 
+            width: 100%; padding: 12px; border: 1px solid #333; border-radius: 15px; 
+            background: var(--input-bg); color: var(--text); font-size: 15px; 
+            text-align: center; outline: none; box-sizing: border-box; transition: 0.3s;
+        }
+
+        .quick-conv {
+            background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 18px;
+            margin-bottom: 15px; border: 1px solid #222;
+        }
+        .conv-inputs { display: flex; gap: 8px; align-items: center; }
+        .conv-inputs input { padding: 8px; font-size: 13px; border-radius: 10px; }
+
+        .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .res-card { 
+            background: rgba(128,128,128,0.05); padding: 12px 5px; border-radius: 15px; 
+            text-align: center; border: 1px solid #333; 
+        }
+        .res-card.highlight { border-color: var(--gold); background: rgba(212, 175, 55, 0.05); }
+        .res-label { display: block; font-size: 10px; color: var(--gold); margin-bottom: 5px; }
+        .res-iqd { display: block; font-weight: bold; font-size: 13px; margin-bottom: 2px; }
+        .res-usd { display: block; font-size: 10px; color: #777; }
+
+        .alert-section {
+            background: rgba(0, 212, 255, 0.05); padding: 10px; border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.2); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+        }
+        .alert-input { padding: 8px; border-radius: 10px; font-size: 13px; flex-grow: 1; }
+
+        .calc-section { 
+            background: rgba(212, 175, 55, 0.03); padding: 15px; border-radius: 20px; 
+            border: 1px dashed rgba(212, 175, 55, 0.3); margin-top: 10px;
+        }
+        .weight-info { font-size: 11px; color: var(--gold); text-align: center; margin-top: 8px; display: block; font-weight: 500; }
+        
+        .total-box { 
+            text-align: center; margin-top: 12px; background: #000; padding: 15px; 
+            border-radius: 15px; border: 1px solid var(--up); position: relative; 
+        }
+        .currency-toggle { position: absolute; left: 10px; top: 15px; background: #222; border: 1px solid #444; color: var(--text); border-radius: 8px; padding: 6px; cursor: pointer; font-size: 14px; }
+
+        .btn-share { 
+            background: rgba(0, 255, 136, 0.1); color: var(--up); border: 1px solid var(--up); 
+            border-radius: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; 
+            margin-top: 10px; width: 100%; transition: 0.3s;
+        }
+        .btn-share:active { background: var(--up); color: #000; }
+
+        .price-change { font-size: 10px; margin-right: 5px; font-weight: bold; }
+        
+        .days-modal { display: none; position: absolute; top: 80px; left: 20px; right: 20px; background: var(--card); border: 2px solid var(--gold); padding: 20px; border-radius: 20px; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
         .days-modal.active { display: block; }
-        .freeze-btn { background: #333; border: 1px solid var(--freeze); color: var(--freeze); border-radius: 8px; font-size: 10px; padding: 5px 10px; cursor: pointer; }
-        .freeze-active { background: var(--freeze); color: #000; }
-        .history-box { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; max-height: 150px; overflow-y: auto; }
+        .freeze-btn { background: #333; border: 1px solid var(--freeze); color: var(--freeze); border-radius: 10px; font-size: 11px; padding: 6px 12px; cursor: pointer; margin-left: 5px; }
+        .freeze-active { background: var(--freeze); color: #000; font-weight: bold; }
+        .history-box { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; max-height: 120px; overflow-y: auto; }
         .history-item { font-size: 11px; padding: 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
+<button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+<div id="sidebar" class="sidebar">
+    <h3 data-key="settings" style="color:var(--gold); text-align: center;">ڕێکخستنەکان</h3>
+    
+    <div class="menu-dropdown">
+        <button class="dropdown-header-btn" onclick="toggleDropdown('langList')">
+            🌐 <span data-key="languages_btn">زمانەکان</span>
+        </button>
+        <div id="langList" class="dropdown-list">
+            <button class="sub-btn" onclick="changeLanguage('ku')">کوردی</button>
+            <button class="sub-btn" onclick="changeLanguage('ar')">العربية</button>
+            <button class="sub-btn" onclick="changeLanguage('en')">English</button>
+            <button class="sub-btn" onclick="changeLanguage('tr')">Türkçe</button>
+        </div>
+    </div>
+
+    <div class="menu-dropdown">
+        <button class="dropdown-header-btn" onclick="toggleDropdown('soundList')">
+            🔔 <span data-key="sounds_btn">دەنگەکان</span>
+        </button>
+        <div id="soundList" class="dropdown-list">
+            <button class="sub-btn" id="s1" onclick="changeSound(1, true)">زەنگی یەکەم</button>
+            <button class="sub-btn" id="s2" onclick="changeSound(2, true)">زەنگی دووەم</button>
+            <button class="sub-btn" id="s3" onclick="changeSound(3, true)">زەنگی سێیەم</button>
+        </div>
+    </div>
+
+    <button onclick="toggleSidebar()" data-key="close" style="margin-top: 30px; width: 100%; padding: 12px; border-radius: 12px; background: var(--gold); border: none; font-weight: bold; cursor:pointer;">داخستن</button>
+</div>
+
 <div class="box">
     <button onclick="document.body.classList.toggle('light-mode')" style="position:absolute; left:15px; top:15px; background:none; border:none; cursor:pointer; font-size:18px;">🌓</button>
-    <div class="header"><h2>بۆرسەی زێڕ</h2></div>
+    <div class="header"><h2 data-key="title">بۆرسەی زێڕ</h2></div>
     <p id="live-clock" class="live-clock">--:--:--</p>
     
     <div class="status-bar">
         <button id="live-btn" class="btn-live" onclick="fetchGoldPrice()">Live 🔴</button>
         <div style="display: flex; gap: 5px; align-items: center;">
-            <button id="freeze-btn" class="freeze-btn" onclick="toggleFreeze()">❄️ بەستن</button>
+            <button id="freeze-btn" class="freeze-btn" onclick="toggleFreeze()" data-key="freeze">❄️ بەستن</button>
             <div class="market-btn" onclick="document.getElementById('daysModal').classList.toggle('active')">
                 <div id="status-dot" class="status-dot"></div>
-                <span id="market-text">بۆرسە</span>
+                <span id="market-text" data-key="market" style="font-size: 12px;">بۆرسە</span>
             </div>
         </div>
     </div>
 
+    <div class="quick-conv">
+        <label data-key="quick_conv_label" style="text-align: center; display: block; margin-bottom: 8px; font-size: 10px; color: var(--gold);">گۆڕینەوەی خێرا (دۆلار ⇄ دینار)</label>
+        <div class="conv-inputs">
+            <input type="number" id="quick-usd" placeholder="$" oninput="convertQuick('usd')">
+            <span style="font-size: 12px;">⇄</span>
+            <input type="number" id="quick-iqd" placeholder="د.ک" oninput="convertQuick('iqd')">
+        </div>
+    </div>
+
+    <div class="alert-section">
+        <label data-key="alert_me" style="color: var(--freeze); margin: 0; font-size: 10px;">ئاگادارم بکە لە:</label>
+        <input type="number" id="alert-price" class="alert-input" placeholder="...">
+        <span id="alert-status" style="font-size: 14px;">🔔</span>
+    </div>
+
     <div id="daysModal" class="days-modal">
-        <div style="text-align: center; color: var(--gold); font-size: 14px; font-weight: bold; margin-bottom: 10px;">خشتەی بۆرسەی جیهانی</div>
-        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #333;"><span>دووشەممە - هەینی</span> <span style="color:var(--up)">کراوەیە</span></div>
-        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0;"><span>شەممە - یەکشەممە</span> <span style="color:var(--down)">داخراوە</span></div>
-        <button onclick="document.getElementById('daysModal').classList.remove('active')" style="width: 100%; margin-top: 10px; background: var(--gold); border: none; border-radius: 10px; cursor: pointer; padding: 8px; font-weight: bold;">داخستن</button>
+        <div data-key="market_schedule" style="text-align: center; color: var(--gold); font-size: 15px; font-weight: bold; margin-bottom: 15px;">خشتەی بۆرسەی جیهانی</div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid #333;"><span data-key="mon_fri">دووشەممە - هەینی</span> <span data-key="open" style="color:var(--up)">کراوەیە</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0;"><span data-key="sat_sun">شەممە - یەکشەممە</span> <span data-key="closed" style="color:var(--down)">داخراوە</span></div>
+        <button onclick="document.getElementById('daysModal').classList.remove('active')" data-key="close" style="width: 100%; margin-top: 15px; background: var(--gold); border: none; border-radius: 12px; cursor: pointer; padding: 10px; font-weight: bold;">داخستن</button>
     </div>
 
     <div class="grid">
-        <div><label>ئۆنسە <span id="trend"></span></label><input type="number" id="ounce" step="0.01" oninput="update()"></div>
-        <div><label>١٠٠ دۆلار</label><input type="number" id="dollar" oninput="autoPremium()"></div>
+        <div><label><span data-key="ounce_label">ئۆنسە</span> <span id="trend"></span><span id="diff-val" class="price-change"></span></label><input type="number" id="ounce" step="0.01" oninput="update()"></div>
+        <div><label data-key="dollar_label">١٠٠ دۆلار</label><input type="number" id="dollar" oninput="autoPremium(); convertQuick('usd')"></div>
         <div class="full-width">
-            <label>مەسرەف + حەواڵە ($) <small style="color:var(--up)">Auto ✨</small></label>
+            <label data-key="premium_label">مەسرەف + حەواڵە ($)</label>
             <input type="number" id="premium" oninput="update()">
         </div>
     </div>
 
     <div class="results">
-        <div class="row"><span>عەیار ٢٤:</span><div style="text-align:left;"><span class="val-iqd" id="v24-iqd">0</span><span class="val-usd" id="v24-usd">$0</span></div></div>
-        <div class="row" style="border-right: 3px solid var(--gold);"><span>عەیار ٢١:</span><div style="text-align:left;"><span class="val-iqd" id="v21-iqd">0</span><span class="val-usd" id="v21-usd">$0</span></div></div>
-        <div class="row"><span>عەیار ١٨:</span><div style="text-align:left;"><span class="val-iqd" id="v18-iqd">0</span><span class="val-usd" id="v18-usd">$0</span></div></div>
+        <div class="res-card"><span class="res-label" data-key="v24">عەیار ٢٤</span><span class="res-iqd" id="v24-iqd">0</span><span class="res-usd" id="v24-usd">$0</span></div>
+        <div class="res-card highlight"><span class="res-label" data-key="v21">عەیار ٢١</span><span class="res-iqd" id="v21-iqd">0</span><span class="res-usd" id="v21-usd">$0</span></div>
+        <div class="res-card"><span class="res-label" data-key="v18">عەیار ١٨</span><span class="res-iqd" id="v18-iqd">0</span><span class="res-usd" id="v18-usd">$0</span></div>
     </div>
 
     <div class="calc-section">
         <div class="grid" style="margin: 0; gap: 8px;">
-            <div><label>گرام</label><input type="number" id="g-weight" placeholder="0" oninput="update()"></div>
-            <div><label>مسقاڵ</label><input type="number" id="m-weight" placeholder="0" oninput="update()"></div>
-            <div><label>حەق دەست (مسقاڵ)</label><input type="number" id="work-cost" value="0" oninput="update()"></div>
-            <div><label>عەیار</label><select id="calc-karat" onchange="update()"><option value="1">٢٤</option><option value="0.875" selected>٢١</option><option value="0.75">١٨</option></select></div>
+            <div><label data-key="gram">گرام</label><input type="number" id="g-weight" placeholder="0" oninput="update()"></div>
+            <div><label data-key="mithqal">مسقاڵ</label><input type="number" id="m-weight" placeholder="0" oninput="update()"></div>
+            <div><label data-key="wage">حەق دەست</label><input type="number" id="work-cost" value="0" oninput="update()"></div>
+            <div><label data-key="karat">عەیار</label><select id="calc-karat" onchange="update()"><option value="1">٢٤</option><option value="0.875" selected>٢١</option><option value="0.75">١٨</option></select></div>
         </div>
-        <span id="weight-detail" class="weight-info">کێش: 0 مسقاڵ و 0 نۆد</span>
+        <span id="weight-detail" class="weight-info">...</span>
         <div class="total-box">
             <button class="currency-toggle" onclick="toggleCurrency()">⇄</button>
-            <span id="total-val" style="color:var(--up); font-size: 18px; font-weight: bold;">0 د.ک</span>
-            <div onclick="addToHistory()" style="margin-top: 5px; color:#666; font-size:10px; cursor:pointer;">➕ پاشەکەوت بکە</div>
+            <span id="total-val" style="color:var(--up); font-size: 20px; font-weight: bold;">0 د.ک</span>
+            <button class="btn-share" onclick="shareResult()" data-key="share">📤 هاوبەشکردنی نرخ</button>
+            <div onclick="addToHistory()" data-key="save" style="margin-top: 12px; color:#666; font-size:10px; cursor:pointer; text-decoration: underline;">➕ پاشەکەوت بکە</div>
         </div>
     </div>
 
     <div id="history-container" class="history-box">
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span style="font-size:10px; color:#888;">لیستی پاشەکەوت:</span><button onclick="clearHistory()" style="background:none; border:none; color:var(--down); font-size:9px; cursor:pointer;">سڕینەوە</button></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span data-key="history_list" style="font-size:10px; color:#888;">لیستی پاشەکەوت:</span><button onclick="clearHistory()" data-key="clear" style="background:none; border:none; color:var(--down); font-size:9px; cursor:pointer;">سڕینەوە</button></div>
         <div id="history-list"></div>
     </div>
 </div>
@@ -103,125 +240,111 @@
     let showInDollar = false;
     let currentTotalIQD = 0;
     let lastPrice = 0;
+    let currentLang = 'ku';
+    let selectedSound = 1;
 
-    function toggleFreeze() {
-        isFrozen = !isFrozen;
-        const btn = document.getElementById('freeze-btn');
-        btn.classList.toggle('freeze-active');
-        btn.innerText = isFrozen ? "✅ بەستراوە" : "❄️ بەستن";
+    const translations = {
+        ku: { title: "بۆرسەی زێڕ", settings: "ڕێکخستنەکان", languages_btn: "زمانەکان", sounds_btn: "دەنگەکان", close: "داخستن", freeze: "❄️ بەستن", market: "بۆرسە", quick_conv_label: "گۆڕینەوەی خێرا (دۆلار ⇄ دینار)", alert_me: "ئاگادارم بکە لە:", market_schedule: "خشتەی بۆرسەی جیهانی", mon_fri: "دووشەممە - هەینی", sat_sun: "شەممە - یەکشەممە", open: "کراوەیە", closed: "داخراوە", ounce_label: "ئۆنسە", dollar_label: "١٠٠ دۆلار", premium_label: "مەسرەف + حەواڵە ($)", v24: "عەیار ٢٤", v21: "عەیار ٢١", v18: "عەیار ١٨", gram: "گرام", mithqal: "مسقاڵ", wage: "حەق دەست", karat: "عەیار", share: "📤 هاوبەشکردنی نرخ", save: "➕ پاشەکەوت بکە", history_list: "لیستی پاشەکەوت:", clear: "سڕینەوە", mithqal_unit: "مسقاڵ", nod_unit: "نۆد", frozen_msg: "✅ بەستراوە" },
+        ar: { title: "بورصة الذهب", settings: "الإعدادات", languages_btn: "اللغات", sounds_btn: "الأصوات", close: "إغلاق", freeze: "❄️ تجميد", market: "البورصة", quick_conv_label: "تحويل سريع (دولار ⇄ دينار)", alert_me: "نبهني عند:", market_schedule: "جدول البورصة العالمية", mon_fri: "الأثنين - الجمعة", sat_sun: "السبت - الأحد", open: "مفتوح", closed: "مغلق", ounce_label: "أونصة", dollar_label: "١٠٠ دولار", premium_label: "مصرف + حوالة ($)", v24: "عيار ٢٤", v21: "عيار ٢١", v18: "عيار ١٨", gram: "جرام", mithqal: "مثقال", wage: "أجور الصياغة", karat: "عيار", share: "📤 مشاركة السعر", save: "➕ حفظ النتائج", history_list: "سجل المحفوظات:", clear: "مسح", mithqal_unit: "مثقال", nod_unit: "نود", frozen_msg: "✅ متجمد" },
+        en: { title: "Gold Exchange", settings: "Settings", languages_btn: "Languages", sounds_btn: "Sounds", close: "Close", freeze: "❄️ Freeze", market: "Market", quick_conv_label: "Quick Conv (USD ⇄ IQD)", alert_me: "Alert me at:", market_schedule: "Global Market Schedule", mon_fri: "Mon - Fri", sat_sun: "Sat - Sun", open: "Open", closed: "Closed", ounce_label: "Ounce", dollar_label: "$100 Rate", premium_label: "Premium + Transfer ($)", v24: "Karat 24", v21: "Karat 21", v18: "Karat 18", gram: "Gram", mithqal: "Mithqal", wage: "Work Cost", karat: "Karat", share: "📤 Share Price", save: "➕ Save Result", history_list: "History:", clear: "Clear", mithqal_unit: "Mithqal", nod_unit: "Nod", frozen_msg: "✅ Frozen" },
+        tr: { title: "Altın Borsası", settings: "Ayarlar", languages_btn: "Diller", sounds_btn: "Sesler", close: "Kapat", freeze: "❄️ Dondur", market: "Borsa", quick_conv_label: "Hızlı Dönüştür (USD ⇄ IQD)", alert_me: "Beni uyar:", market_schedule: "Küresel Borsa Takvimi", mon_fri: "Pazartesi - Cuma", sat_sun: "Cumartesi - Pazar", open: "Açık", closed: "Kapalı", ounce_label: "Ons", dollar_label: "$100 Kuru", premium_label: "Masraf + Havale ($)", v24: "24 Ayar", v21: "21 Ayar", v18: "18 Ayar", gram: "Gram", mithqal: "Miskal", wage: "İşçilik", karat: "Ayar", share: "📤 Fiyatı Paylaş", save: "➕ Kaydet", history_list: "Kayıt Geçmişi:", clear: "Temizle", mithqal_unit: "Miskal", nod_unit: "Nod", frozen_msg: "✅ Donduruldu" }
+    };
+
+    function toggleDropdown(id) {
+        const list = document.getElementById(id);
+        const isOpen = list.classList.contains('show');
+        document.querySelectorAll('.dropdown-list').forEach(d => d.classList.remove('show'));
+        if(!isOpen) list.classList.add('show');
     }
 
-    function toggleCurrency() {
-        showInDollar = !showInDollar;
-        displayTotal();
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('active'); 
+        if(!document.getElementById('sidebar').classList.contains('active')) {
+            document.querySelectorAll('.dropdown-list').forEach(d => d.classList.remove('show'));
+        }
     }
 
-    function autoPremium() {
-        if(isFrozen) return;
-        const dollar = parseFloat(document.getElementById('dollar').value) || 0;
-        let basePremium = 220;
-        let diff = (dollar - 148900) / 1000;
-        document.getElementById('premium').value = (basePremium + (diff * 2.5)).toFixed(1);
+    function changeLanguage(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        document.documentElement.dir = (lang === 'en' || lang === 'tr') ? 'ltr' : 'rtl';
+        const elements = document.querySelectorAll('[data-key]');
+        elements.forEach(el => {
+            const key = el.getAttribute('data-key');
+            if (translations[lang][key]) el.innerText = translations[lang][key];
+        });
         update();
+        toggleSidebar();
     }
 
-    async function fetchGoldPrice() {
-        if(isFrozen) return;
-        try {
-            const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT');
-            const data = await res.json();
-            const price = parseFloat(data.price);
-            
-            if (price > 0) {
-                const trend = document.getElementById('trend');
-                if(lastPrice > 0 && price !== lastPrice) {
-                    trend.innerHTML = price > lastPrice ? "▲" : "▼";
-                    trend.style.color = price > lastPrice ? "var(--up)" : "var(--down)";
-                }
-                lastPrice = price;
-                document.getElementById('ounce').value = price.toFixed(2);
-                update();
-            }
-        } catch (e) { console.log("Fetch error"); }
+    function changeSound(id, preview = false) {
+        selectedSound = id;
+        document.querySelectorAll('#soundList .sub-btn').forEach(b => b.classList.remove('active-item'));
+        document.getElementById('s' + id).classList.add('active-item');
+        if(preview) playAlertSound();
     }
 
-    function update() {
-        const ounce = parseFloat(document.getElementById('ounce').value) || 0;
-        const dollar = parseFloat(document.getElementById('dollar').value) || 0;
-        const premium = parseFloat(document.getElementById('premium').value) || 0;
-        const workCost = parseFloat(document.getElementById('work-cost').value) || 0;
-        const exRate = dollar / 100;
-
-        if (ounce > 0 && dollar > 0) {
-            // فۆرمولای نوێ و وردتر - نزیکتر لە نرخی جیهانی
-            const gramInUSD = (ounce + premium) / 31.1034768;
-            const mithqalInUSD = gramInUSD * 5;
-            const m24_raw = mithqalInUSD * exRate;
-            
-            function setPrice(id, ratio) {
-                const exactPrice = m24_raw * ratio;
-                const iqd = (Math.round(exactPrice / 250) * 250);
-                document.getElementById(id + '-iqd').innerText = iqd.toLocaleString() + " د.ک";
-                document.getElementById(id + '-usd').innerText = "$" + (iqd / exRate).toFixed(2);
-            }
-
-            setPrice('v24', 1); 
-            setPrice('v21', 0.875); 
-            setPrice('v18', 0.75);
-
-            const gW = parseFloat(document.getElementById('g-weight').value) || 0;
-            const mW = parseFloat(document.getElementById('m-weight').value) || 0;
-            const totalM = mW + (gW / 5);
-            
-            document.getElementById('weight-detail').innerText = `کێش: ${Math.floor(totalM)} مسقاڵ و ${Math.round((totalM % 1) * 100)} نۆد`;
-
-            const karat = parseFloat(document.getElementById('calc-karat').value);
-            currentTotalIQD = (m24_raw * karat * totalM) + (workCost * totalM);
-            displayTotal();
-        }
-    }
-
-    function displayTotal() {
-        const dollar = parseFloat(document.getElementById('dollar').value) || 1;
-        const exRate = dollar / 100;
-        const el = document.getElementById('total-val');
-        if (showInDollar) {
-            el.innerText = "$" + (currentTotalIQD / exRate).toFixed(2);
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playAlertSound() {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        if(selectedSound === 1) {
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        } else if(selectedSound === 2) {
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
         } else {
-            el.innerText = (Math.round(currentTotalIQD / 250) * 250).toLocaleString() + " د.ک";
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        }
+        
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function toggleFreeze() { isFrozen = !isFrozen; const btn = document.getElementById('freeze-btn'); btn.classList.toggle('freeze-active'); btn.innerText = isFrozen ? translations[currentLang].frozen_msg : translations[currentLang].freeze; }
+    function toggleCurrency() { showInDollar = !showInDollar; displayTotal(); }
+    function autoPremium() { if(isFrozen) return; const dollar = parseFloat(document.getElementById('dollar').value) || 0; let basePremium = 220; let diff = (dollar - 148900) / 1000; document.getElementById('premium').value = (basePremium + (diff * 2.5)).toFixed(1); update(); }
+    function convertQuick(type) { const dollarRate = parseFloat(document.getElementById('dollar').value) / 100 || 0; const usdIn = document.getElementById('quick-usd'); const iqdIn = document.getElementById('quick-iqd'); if (dollarRate === 0) return; if (type === 'usd') { iqdIn.value = (usdIn.value * dollarRate).toFixed(0); } else { usdIn.value = (iqdIn.value / dollarRate).toFixed(2); } }
+    
+    function checkAlert(currentPrice) {
+        const targetPrice = parseFloat(document.getElementById('alert-price').value);
+        const statusIcon = document.getElementById('alert-status');
+        if (targetPrice > 0 && Math.abs(currentPrice - targetPrice) <= 0.5) {
+            statusIcon.innerText = "🔔!"; statusIcon.style.color = "var(--up)";
+            playAlertSound();
+            if (window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
+        } else {
+            statusIcon.innerText = "🔔"; statusIcon.style.color = "inherit";
         }
     }
 
-    function addToHistory() {
-        const val = document.getElementById('total-val').innerText;
-        const weight = document.getElementById('weight-detail').innerText;
-        if(currentTotalIQD === 0) return;
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerHTML = `<span>${weight}</span> <strong>${val}</strong>`;
-        document.getElementById('history-list').prepend(item);
-    }
-
-    function clearHistory() { document.getElementById('history-list').innerHTML = ''; }
+    async function fetchGoldPrice() { if(isFrozen) return; try { const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT'); const data = await res.json(); const price = parseFloat(data.price); if (price > 0) { checkAlert(price); const trend = document.getElementById('trend'); const diffEl = document.getElementById('diff-val'); if(lastPrice > 0 && price !== lastPrice) { const diff = price - lastPrice; const percent = (diff / lastPrice) * 100; trend.innerHTML = diff > 0 ? "▲" : "▼"; trend.style.color = diff > 0 ? "var(--up)" : "var(--down)"; diffEl.innerText = `${diff > 0 ? "+" : ""}${diff.toFixed(2)} (${diff > 0 ? "+" : ""}${percent.toFixed(2)}%)`; diffEl.style.color = diff > 0 ? "var(--up)" : "var(--down)"; } lastPrice = price; document.getElementById('ounce').value = price.toFixed(2); update(); } } catch (e) { } }
+    function update() { const ounce = parseFloat(document.getElementById('ounce').value) || 0; const dollar = parseFloat(document.getElementById('dollar').value) || 0; const premium = parseFloat(document.getElementById('premium').value) || 0; const workCost = parseFloat(document.getElementById('work-cost').value) || 0; const exRate = dollar / 100; if (ounce > 0 && dollar > 0) { const gramInUSD = (ounce + premium) / 31.1034768; const mithqalInUSD = gramInUSD * 5; const m24_raw = mithqalInUSD * exRate; function setPrice(id, ratio) { const exactPrice = m24_raw * ratio; const iqd = (Math.round(exactPrice / 250) * 250); document.getElementById(id + '-iqd').innerText = iqd.toLocaleString(); document.getElementById(id + '-usd').innerText = "$" + (iqd / exRate).toFixed(2); } setPrice('v24', 1); setPrice('v21', 0.875); setPrice('v18', 0.75); const gW = parseFloat(document.getElementById('g-weight').value) || 0; const mW = parseFloat(document.getElementById('m-weight').value) || 0; const totalM = mW + (gW / 5); document.getElementById('weight-detail').innerText = `${Math.floor(totalM)} ${translations[currentLang].mithqal_unit} & ${Math.round((totalM % 1) * 100)} ${translations[currentLang].nod_unit}`; const karat = parseFloat(document.getElementById('calc-karat').value); currentTotalIQD = (m24_raw * karat * totalM) + (workCost * totalM); displayTotal(); } }
+    function displayTotal() { const dollar = parseFloat(document.getElementById('dollar').value) || 1; const exRate = dollar / 100; const el = document.getElementById('total-val'); const currency = (currentLang === 'en' || currentLang === 'tr') ? ' IQD' : (currentLang === 'ar' ? ' د.ع' : ' د.ک'); if (showInDollar) { el.innerText = "$" + (currentTotalIQD / exRate).toFixed(2); } else { el.innerText = (Math.round(currentTotalIQD / 250) * 250).toLocaleString() + currency; } }
+    function shareResult() { const total = document.getElementById('total-val').innerText; const weight = document.getElementById('weight-detail').innerText; const ounce = document.getElementById('ounce').value; const text = `📊 ${weight}\n💰 ${total}\n🌍 $${ounce}`; navigator.clipboard.writeText(text).then(() => { alert((currentLang === 'en' || currentLang === 'tr') ? 'Copied!' : 'کۆپی کرا'); }); }
+    function addToHistory() { const val = document.getElementById('total-val').innerText; const weight = document.getElementById('weight-detail').innerText; if(currentTotalIQD === 0) return; let history = JSON.parse(localStorage.getItem('gold_history') || '[]'); history.unshift({ weight, val }); history = history.slice(0, 10); localStorage.setItem('gold_history', JSON.stringify(history)); renderHistory(); }
+    function renderHistory() { const history = JSON.parse(localStorage.getItem('gold_history') || '[]'); const listContainer = document.getElementById('history-list'); listContainer.innerHTML = ''; history.forEach(item => { const div = document.createElement('div'); div.className = 'history-item'; div.innerHTML = `<span>${item.weight}</span> <strong>${item.val}</strong>`; listContainer.appendChild(div); }); }
+    function clearHistory() { localStorage.removeItem('gold_history'); renderHistory(); }
 
     setInterval(() => {
         document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('en-GB');
-        const d = new Date();
-        const dot = document.getElementById('status-dot');
-        const text = document.getElementById('market-text');
-        if (d.getDay() === 6 || d.getDay() === 0) { 
-            dot.className = "status-dot dot-closed"; text.innerText = "داخراوە"; 
-        } else { 
-            dot.className = "status-dot dot-open"; text.innerText = "کراوەیە"; 
-        }
+        const d = new Date(); const dot = document.getElementById('status-dot'); const text = document.getElementById('market-text');
+        if (d.getDay() === 6 || d.getDay() === 0) { dot.className = "status-dot dot-closed"; text.innerText = translations[currentLang].closed; } 
+        else { dot.className = "status-dot dot-open"; text.innerText = translations[currentLang].open; }
     }, 1000);
 
     window.onload = () => {
-        document.getElementById('dollar').value = "149000";
-        autoPremium();
-        fetchGoldPrice();
+        document.getElementById('dollar').value = "150000";
+        changeLanguage('ku');
+        changeSound(1);
+        autoPremium(); fetchGoldPrice(); renderHistory();
         setInterval(fetchGoldPrice, 3000);
     };
 </script>
 </body>
-    </html>
+</html>
