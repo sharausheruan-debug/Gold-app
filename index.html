@@ -76,8 +76,9 @@
         .res-iqd { display: block; font-weight: bold; font-size: 13px; margin-bottom: 2px; }
         .res-usd { display: block; font-size: 10px; color: #777; }
 
-        .alert-section { background: rgba(0, 212, 255, 0.05); padding: 10px; border-radius: 15px; border: 1px solid rgba(0, 212, 255, 0.2); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; transition: 0.3s; }
+        .alert-section { background: rgba(0, 212, 255, 0.05); padding: 10px; border-radius: 15px; border: 1px solid rgba(0, 212, 255, 0.2); margin-bottom: 15px; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
         .alert-input { padding: 8px; border-radius: 10px; font-size: 13px; flex-grow: 1; }
+        .alert-type-btn { background: #222; border: 1px solid var(--freeze); color: var(--freeze); border-radius: 10px; font-size: 10px; padding: 8px 5px; cursor: pointer; min-width: 60px; }
 
         .calc-section { background: rgba(212, 175, 55, 0.03); padding: 15px; border-radius: 20px; border: 1px dashed rgba(212, 175, 55, 0.3); margin-top: 10px; }
         .weight-info { font-size: 11px; color: var(--gold); text-align: center; margin-top: 8px; display: block; font-weight: 500; }
@@ -175,7 +176,7 @@
     </div>
 
     <div id="alert-ui-section" class="alert-section">
-        <label data-key="alert_me" style="color: var(--freeze); margin: 0; font-size: 10px;">ئاگادارم بکە لە:</label>
+        <button id="alert-type-btn" class="alert-type-btn" onclick="cycleAlertType()">ئۆنسە</button>
         <input type="number" id="alert-price" class="alert-input" placeholder="...">
         <span id="alert-status" style="font-size: 14px;">🔔</span>
     </div>
@@ -234,13 +235,45 @@
 <script>
     let isFrozen = false, showInDollar = false, currentTotalIQD = 0, lastPrice = 0, currentLang = 'ku', selectedSound = 1, isAlertEnabled = true;
     let audioCtx = null;
-    let lastNotificationTime = 0;
+    let alertType = 'ounce'; 
+    let lastAlertFiredPrice = 0;
 
     function resumeAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        // داوای مۆڵەتی نۆتیفیکەیشن دەکات ئەگەر پێشتر نەدرابێت
-        if (Notification.permission === 'default') Notification.requestPermission();
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        // Ask for notification permission on first interaction
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }
+
+    function cycleAlertType() {
+        const btn = document.getElementById('alert-type-btn');
+        const types = ['ounce', 'v24', 'v21', 'v18'];
+        const labels = {
+            ku: { ounce: 'ئۆنسە', v24: 'عەیار ٢٤', v21: 'عەیار ٢١', v18: 'عەیار ١٨' },
+            ar: { ounce: 'أونصة', v24: 'ع ٢٤', v21: 'ع ٢١', v18: 'ع ١٨' },
+            en: { ounce: 'Ounce', v24: 'K24', v21: 'K21', v18: 'K18' },
+            tr: { ounce: 'Ons', v24: '24 Ayar', v21: '21 Ayar', v18: '18 Ayar' }
+        };
+        let idx = types.indexOf(alertType);
+        alertType = types[(idx + 1) % types.length];
+        btn.innerText = labels[currentLang][alertType];
+        lastAlertFiredPrice = 0;
+        resumeAudio();
+    }
+
+    function sendNotification(title, body) {
+        if (Notification.permission === "granted") {
+            new Notification(title, {
+                body: body,
+                icon: "https://cdn-icons-png.flaticon.com/512/2454/2454282.png"
+            });
+        }
     }
 
     function toggleSectionVisibility(sectionId) {
@@ -266,10 +299,10 @@
     }
 
     const translations = {
-        ku: { title: "بۆرسەی زێڕ", settings_btn: "ڕێکخستنەکان", languages_btn: "زمانەکان", sounds_btn: "دەنگەکان", close: "داخستن", freeze: "❄️ بەستن", market: "بۆرسە", quick_conv_label: "گۆڕینەوەی خێرا (دۆلار ⇄ دینار)", alert_me: "ئاگادارم بکە لە:", market_schedule: "خشتەی بۆرسەی جیهانی", mon_fri: "دووشەممە - هەینی", sat_sun: "شەممە - یەکشەممە", open: "کراوەیە", closed: "داخراوە", ounce_label: "ئۆنسە", dollar_label: "١٠٠ دۆلار", premium_label: "مەسرەف + حەواڵە ($)", v24: "عەیار ٢٤", v21: "عەیار ٢١", v18: "عەیار ١٨", gram: "گرام", mithqal: "مسقاڵ", wage: "حەق دەست", karat: "عەیار", share: "📤 هاوبەشکردنی نرخ", save: "➕ پاشەکەوت بکە", history_list: "لیستی پاشەکەوت:", clear: "سڕینەوە", mithqal_unit: "مسقاڵ", nod_unit: "نۆد", frozen_msg: "✅ بەستراوە", s_alert: "ئاگادارکردنەوە", s_quick: "گۆڕینەوەی خێرا", s_trend: "ڕێژەی گۆڕانکاری", s_calc: "هەژمارکردنی مسقاڵ", s_v24: "پیشاندانی عەیار ٢٤", s_v21: "پیشاندانی عەیار ٢١", s_v18: "پیشاندانی عەیار ١٨", sound_1: "زەنگی مۆدێرن", sound_2: "ئاگادارکەرەوە", sound_3: "زەنگی کریستاڵ", alert_title: "ئاگادارکەرەوەی نرخ", alert_body: "نرخی ئۆنسە گەیشتە: $" },
-        ar: { title: "بورصة الذهب", settings_btn: "الإعدادات", languages_btn: "اللغات", sounds_btn: "الأصوات", close: "إغلاق", freeze: "❄️ تجميد", market: "البورصة", quick_conv_label: "تحويل سريع (دولار ⇄ دينار)", alert_me: "نبهني عند:", market_schedule: "جدول البورصة العالمية", mon_fri: "الأثنين - الجمعة", sat_sun: "السبت - الأحد", open: "مفتوح", closed: "مغلق", ounce_label: "أونصة", dollar_label: "١٠٠ دولار", premium_label: "مصرف + حوالة ($)", v24: "عيار ٢٤", v21: "عيار ٢١", v18: "عيار ١٨", gram: "جرام", mithqal: "مثقال", wage: "أجور الصياغة", karat: "عيار", share: "📤 مشاركة السعر", save: "➕ حفظ النتائج", history_list: "سجل المحفوظات:", clear: "مسح", mithqal_unit: "مثقال", nod_unit: "نود", frozen_msg: "✅ متجمد", s_alert: "تنبيهات", s_quick: "التحويل السريع", s_trend: "نسبة التغيير", s_calc: "حساب المثقال", s_v24: "عرض عيار ٢٤", s_v21: "عرض عيار ٢١", s_v18: "عرض عيار ١٨", sound_1: "رنة مودرن", sound_2: "رنة تنبيه", sound_3: "رنة كريستال", alert_title: "تنبيه السعر", alert_body: "وصل سعر الأونصة إلى: $" },
-        en: { title: "Gold Exchange", settings_btn: "Settings", languages_btn: "Languages", sounds_btn: "Sounds", close: "Close", freeze: "❄️ Freeze", market: "Market", quick_conv_label: "Quick Conv (USD ⇄ IQD)", alert_me: "Alert me at:", market_schedule: "Global Market Schedule", mon_fri: "Mon - Fri", sat_sun: "Sat - Sun", open: "Open", closed: "Closed", ounce_label: "Ounce", dollar_label: "$100 Rate", premium_label: "Premium + Transfer ($)", v24: "Karat 24", v21: "Karat 21", v18: "Karat 18", gram: "Gram", mithqal: "Mithqal", wage: "Work Cost", karat: "Karat", share: "📤 Share Price", save: "➕ Save Result", history_list: "History:", clear: "Clear", mithqal_unit: "Mithqal", nod_unit: "Nod", frozen_msg: "✅ Frozen", s_alert: "Alerts", s_quick: "Quick Conversion", s_trend: "Trend Percentage", s_calc: "Weight Calculator", s_v24: "Show Karat 24", s_v21: "Show Karat 21", s_v18: "Show Karat 18", sound_1: "Modern Sound", sound_2: "Alert Sound", sound_3: "Crystal Sound", alert_title: "Price Alert", alert_body: "Ounce price reached: $" },
-        tr: { title: "Altın Borsası", settings_btn: "Ayarlar", languages_btn: "Diller", sounds_btn: "Sesler", close: "Kapat", freeze: "❄️ Dondur", market: "Borsa", quick_conv_label: "Hızlı Dönüştür (USD ⇄ IQD)", alert_me: "Beni uyar:", market_schedule: "Küresel Borsa Takvimi", mon_fri: "Pazartesi - Cuma", sat_sun: "Cumartesi - Pazar", open: "Açık", closed: "Kapalı", ounce_label: "Ons", dollar_label: "$100 Kuru", premium_label: "Masraf + Havale ($)", v24: "24 Ayar", v21: "21 Ayar", v18: "18 Ayar", gram: "Gram", mithqal: "Miskal", wage: "İşçilik", karat: "Ayar", share: "📤 Fiyatı Paylaş", save: "➕ Kaydet", history_list: "Kayıt Geçmişi:", clear: "Temizle", mithqal_unit: "Miskal", nod_unit: "Nod", frozen_msg: "✅ Donduruldu", s_alert: "Uyarılar", s_quick: "Hızlı Dönüşüm", s_trend: "Değişim Oranı", s_calc: "Miskal Hesaplama", s_v24: "24 Ayarı Göster", s_v21: "21 Ayarı Göster", s_v18: "18 Ayarı Göster", sound_1: "Modern Zil", sound_2: "Uyarı Zili", sound_3: "Kristal Zil", alert_title: "Fiyat Uyarısı", alert_body: "Ons fiyatı ulaştı: $" }
+        ku: { title: "بۆرسەی زێڕ", settings_btn: "ڕێکخستنەکان", languages_btn: "زمانەکان", sounds_btn: "دەنگەکان", close: "داخستن", freeze: "❄️ بەستن", market: "بۆرسە", quick_conv_label: "گۆڕینەوەی خێرا (دۆلار ⇄ دینار)", alert_me: "ئاگادارم بکە لە:", market_schedule: "خشتەی بۆرسەی جیهانی", mon_fri: "دووشەممە - هەینی", sat_sun: "شەممە - یەکشەممە", open: "کراوەیە", closed: "داخراوە", ounce_label: "ئۆنسە", dollar_label: "١٠٠ دۆلار", premium_label: "مەسرەف + حەواڵە ($)", v24: "عەیار ٢٤", v21: "عەیار ٢١", v18: "عەیار ١٨", gram: "گرام", mithqal: "مسقاڵ", wage: "حەق دەست", karat: "عەیار", share: "📤 هاوبەشکردنی نرخ", save: "➕ پاشەکەوت بکە", history_list: "لیستی پاشەکەوت:", clear: "سڕینەوە", mithqal_unit: "مسقاڵ", nod_unit: "نۆد", frozen_msg: "✅ بەستراوە", s_alert: "ئاگادارکردنەوە", s_quick: "گۆڕینەوەی خێرا", s_trend: "ڕێژەی گۆڕانکاری", s_calc: "هەژمارکردنی مسقاڵ", s_v24: "پیشاندانی عەیار ٢٤", s_v21: "پیشاندانی عەیار ٢١", s_v18: "پیشاندانی عەیار ١٨", sound_1: "زەنگی مۆدێرن", sound_2: "ئاگادارکەرەوە", sound_3: "زەنگی کریستاڵ", alert_title: "ئاگادارکردنەوەی نرخ" },
+        ar: { title: "بورصة الذهب", settings_btn: "الإعدادات", languages_btn: "اللغات", sounds_btn: "الأصوات", close: "إغلاق", freeze: "❄️ تجميد", market: "البورصة", quick_conv_label: "تحويل سريع (دولار ⇄ دينار)", alert_me: "نبهني عند:", market_schedule: "جدول البورصة العالمية", mon_fri: "الأثنين - الجمعة", sat_sun: "السبت - الأحد", open: "مفتوح", closed: "مغلق", ounce_label: "أونصة", dollar_label: "١٠٠ دولار", premium_label: "مصرف + حوالة ($)", v24: "عيار ٢٤", v21: "عيار ٢١", v18: "عيار ١٨", gram: "جرام", mithqal: "مثقال", wage: "أجور الصياغة", karat: "عيار", share: "📤 مشاركة السعر", save: "➕ حفظ النتائج", history_list: "سجل المحفوظات:", clear: "مسح", mithqal_unit: "مثقال", nod_unit: "نود", frozen_msg: "✅ متجمد", s_alert: "تنبيهات", s_quick: "التحويل السريع", s_trend: "نسبة التغيير", s_calc: "حساب المثقال", s_v24: "عرض عيار ٢٤", s_v21: "عرض عيار ٢١", s_v18: "عرض عيار ١٨", sound_1: "رنة مودرن", sound_2: "رنة تنبيه", sound_3: "رنة كريستال", alert_title: "تنبيه السعر" },
+        en: { title: "Gold Exchange", settings_btn: "Settings", languages_btn: "Languages", sounds_btn: "Sounds", close: "Close", freeze: "❄️ Freeze", market: "Market", quick_conv_label: "Quick Conv (USD ⇄ IQD)", alert_me: "Alert me at:", market_schedule: "Global Market Schedule", mon_fri: "Mon - Fri", sat_sun: "Sat - Sun", open: "Open", closed: "Closed", ounce_label: "Ounce", dollar_label: "$100 Rate", premium_label: "Premium + Transfer ($)", v24: "Karat 24", v21: "Karat 21", v18: "Karat 18", gram: "Gram", mithqal: "Mithqal", wage: "Work Cost", karat: "Karat", share: "📤 Share Price", save: "➕ Save Result", history_list: "History:", clear: "Clear", mithqal_unit: "Mithqal", nod_unit: "Nod", frozen_msg: "✅ Frozen", s_alert: "Alerts", s_quick: "Quick Conversion", s_trend: "Trend Percentage", s_calc: "Weight Calculator", s_v24: "Show Karat 24", s_v21: "Show Karat 21", s_v18: "Show Karat 18", sound_1: "Modern Sound", sound_2: "Alert Sound", sound_3: "Crystal Sound", alert_title: "Price Alert" },
+        tr: { title: "Altın Borsası", settings_btn: "Ayarlar", languages_btn: "Diller", sounds_btn: "Sesler", close: "Kapat", freeze: "❄️ Dondur", market: "Borsa", quick_conv_label: "Hızlı Dönüştür (USD ⇄ IQD)", alert_me: "Beni uyar:", market_schedule: "Küresel Borsa Takvimi", mon_fri: "Pazartesi - Cuma", sat_sun: "Cumartesi - Pazar", open: "Açık", closed: "Kapalı", ounce_label: "Ons", dollar_label: "$100 Kuru", premium_label: "Masraf + Havale ($)", v24: "24 Ayar", v21: "21 Ayar", v18: "18 Ayar", gram: "Gram", mithqal: "Miskal", wage: "İşçilik", karat: "Ayar", share: "📤 Fiyatı Paylaş", save: "➕ Kaydet", history_list: "Kayıt Geçmişi:", clear: "Temizle", mithqal_unit: "Miskal", nod_unit: "Nod", frozen_msg: "✅ Donduruldu", s_alert: "Uyarılar", s_quick: "Hızlı Dönüşüm", s_trend: "Değişim Oranı", s_calc: "Miskal Hesaplama", s_v24: "24 Ayarı Göster", s_v21: "21 Ayarı Göster", s_v18: "18 Ayarı Göster", sound_1: "Modern Zil", sound_2: "Uyarı Zili", sound_3: "Kristal Zil", alert_title: "Fiyat Uyarısı" }
     };
 
     function toggleDropdown(id) {
@@ -294,6 +327,13 @@
             const key = el.getAttribute('data-key');
             if (translations[lang][key]) el.innerText = translations[lang][key];
         });
+        const labels = {
+            ku: { ounce: 'ئۆنسە', v24: 'عەیار ٢٤', v21: 'عەیار ٢١', v18: 'عەیار ١٨' },
+            ar: { ounce: 'أونصة', v24: 'ع ٢٤', v21: 'ع ٢١', v18: 'ع ١٨' },
+            en: { ounce: 'Ounce', v24: 'K24', v21: 'K21', v18: 'K18' },
+            tr: { ounce: 'Ons', v24: '24 Ayar', v21: '21 Ayar', v18: '18 Ayar' }
+        };
+        document.getElementById('alert-type-btn').innerText = labels[lang][alertType];
         update(); 
     }
 
@@ -301,35 +341,37 @@
         selectedSound = id;
         document.querySelectorAll('#soundList .sub-btn').forEach(b => b.classList.remove('active-item'));
         document.getElementById('s' + id).classList.add('active-item');
-        if(preview) { resumeAudio(); setTimeout(playAlertSound, 50); }
+        if(preview) {
+            resumeAudio();
+            setTimeout(playAlertSound, 50);
+        }
     }
 
     function playAlertSound() {
         if (!isAlertEnabled || !audioCtx) return;
         const now = audioCtx.currentTime;
-        const gainNode = audioCtx.createGain(); gainNode.connect(audioCtx.destination);
+        const gainNode = audioCtx.createGain(); 
+        gainNode.connect(audioCtx.destination);
         const playTone = (freq, type, startOffset, duration, volume) => {
-            const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.setValueAtTime(freq, now + startOffset);
-            osc.connect(gainNode); gainNode.gain.setValueAtTime(0, now + startOffset);
+            const osc = audioCtx.createOscillator(); 
+            osc.type = type; 
+            osc.frequency.setValueAtTime(freq, now + startOffset);
+            osc.connect(gainNode); 
+            gainNode.gain.setValueAtTime(0, now + startOffset);
             gainNode.gain.linearRampToValueAtTime(volume, now + startOffset + 0.01);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + startOffset + duration);
-            osc.start(now + startOffset); osc.stop(now + startOffset + duration);
+            osc.start(now + startOffset); 
+            osc.stop(now + startOffset + duration);
         };
-        if(selectedSound === 1) { playTone(880, 'sine', 0, 0.5, 0.2); playTone(698.46, 'sine', 0.1, 0.6, 0.15); } 
-        else if(selectedSound === 2) { playTone(1046.50, 'triangle', 0, 0.3, 0.2); playTone(1318.51, 'sine', 0.05, 0.3, 0.1); } 
-        else { playTone(1567.98, 'sine', 0, 0.8, 0.15); playTone(2093.00, 'sine', 0.05, 0.8, 0.05); }
-    }
-
-    function sendMobileNotification(price) {
-        if (Notification.permission === "granted") {
-            const now = Date.now();
-            if (now - lastNotificationTime > 30000) { // هەر ٣٠ چرکە جارێک نۆتیفیکەیشن دەنێرێت بۆ بێزارنەکردن
-                new Notification(translations[currentLang].alert_title, {
-                    body: translations[currentLang].alert_body + price,
-                    icon: "https://cdn-icons-png.flaticon.com/512/2438/2438133.png"
-                });
-                lastNotificationTime = now;
-            }
+        if(selectedSound === 1) { 
+            playTone(880, 'sine', 0, 0.5, 0.2); 
+            playTone(698.46, 'sine', 0.1, 0.6, 0.15); 
+        } else if(selectedSound === 2) { 
+            playTone(1046.50, 'triangle', 0, 0.3, 0.2); 
+            playTone(1318.51, 'sine', 0.05, 0.3, 0.1); 
+        } else { 
+            playTone(1567.98, 'sine', 0, 0.8, 0.15); 
+            playTone(2093.00, 'sine', 0.05, 0.8, 0.05); 
         }
     }
 
@@ -344,7 +386,6 @@
             const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT'); 
             const data = await res.json(); const price = parseFloat(data.price); 
             if (price > 0) { 
-                checkAlert(price);
                 const trend = document.getElementById('trend'), diffEl = document.getElementById('diff-val');
                 if(lastPrice > 0 && price !== lastPrice) {
                     const diff = price - lastPrice, percent = (diff / lastPrice) * 100;
@@ -352,21 +393,40 @@
                     diffEl.innerText = `${diff > 0 ? "+" : ""}${diff.toFixed(2)} (${percent.toFixed(2)}%)`;
                     diffEl.style.color = diff > 0 ? "var(--up)" : "var(--down)";
                 }
-                lastPrice = price; document.getElementById('ounce').value = price.toFixed(2); update(); 
+                lastPrice = price; document.getElementById('ounce').value = price.toFixed(2); 
+                update(); 
+                checkAlert(); 
             } 
         } catch (e) {} 
     }
     
-    function checkAlert(currentPrice) {
+    function checkAlert() {
         if (!isAlertEnabled) return;
         const targetPrice = parseFloat(document.getElementById('alert-price').value);
         const statusIcon = document.getElementById('alert-status');
-        if (targetPrice > 0 && Math.abs(currentPrice - targetPrice) <= 0.2) {
-            statusIcon.style.color = "var(--up)"; 
-            playAlertSound(); 
-            sendMobileNotification(currentPrice.toFixed(2));
-            if (window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
-        } else statusIcon.style.color = "inherit";
+        if (!targetPrice || targetPrice <= 0) { statusIcon.style.color = "inherit"; return; }
+        let currentVal = 0;
+        let typeName = document.getElementById('alert-type-btn').innerText;
+        if (alertType === 'ounce') {
+            currentVal = parseFloat(document.getElementById('ounce').value);
+        } else {
+            currentVal = parseFloat(document.getElementById(`${alertType}-iqd`).innerText.replace(/,/g, ''));
+        }
+        const threshold = (alertType === 'ounce') ? 0.3 : 500;
+        if (Math.abs(currentVal - targetPrice) <= threshold) {
+            if (Math.abs(currentVal - lastAlertFiredPrice) > threshold) {
+                statusIcon.style.color = "var(--up)"; 
+                playAlertSound(); 
+                sendNotification(translations[currentLang].alert_title, `${typeName}: ${currentVal.toLocaleString()}`);
+                if (window.navigator.vibrate) window.navigator.vibrate([300, 100, 300]);
+                lastAlertFiredPrice = currentVal;
+            }
+        } else {
+            statusIcon.style.color = "inherit";
+            if (Math.abs(currentVal - lastAlertFiredPrice) > threshold * 10) {
+                lastAlertFiredPrice = 0;
+            }
+        }
     }
 
     function update() {
@@ -411,7 +471,6 @@
         fetchGoldPrice(); 
         renderHistory(); 
         setInterval(fetchGoldPrice, 3000); 
-        if (Notification.permission === 'default') Notification.requestPermission();
     };
 </script>
 </body>
